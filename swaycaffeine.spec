@@ -36,3 +36,6 @@ install -m 755 ./swaycaffeine %{buildroot}%{_bindir}/swaycaffeine
 %{_bindir}/swaycaffeine
 
 %changelog
+* Mon Aug 28 2023 Damian Ludwig 0.0.1-1
+- new package built with tito
+
