@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #   swaycaffeine - Easy access to Sway's idle inhibitors
 #   Copyright (C) 2023  Damian Ludwig <ludwigd@fedoraproject.org>
