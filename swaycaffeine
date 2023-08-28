@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+#   swaycaffeine - Easy access to Sway's idle inhibitors
+#   Copyright (C) 2023  Damian Ludwig <ludwigd@fedoraproject.org>
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from argparse import ArgumentParser
+from i3ipc import Connection as Sway
+
+class SwayCaffeine:
+    
+    def __init__(self, inhibitor, title_format, title_format_inhibitor):
+        self.default_inhibitor = inhibitor
+        self.title_format_default = title_format
+        self.title_format_inhibitor = title_format_inhibitor
+        self.wm = Sway()
+
+    def toggle_inhibitor(self):
+        win = self.wm.get_tree().find_focused()
+        inhibits_idle = win.ipc_data['inhibit_idle']
+        if inhibits_idle:
+            self.set_inhibitor(win, 'none')
+            self.set_window_title_format(win, self.title_format_default)
+        else:
+            self.set_inhibitor(win, self.default_inhibitor)
+            self.set_window_title_format(win, self.title_format_inhibitor)
+
+    def clear_all_inhibitors(self):
+        windows = self.wm.get_tree().leaves()
+        for win in windows:
+            self.set_inhibitor(win, 'none')
+            self.set_window_title_format(win, self.title_format_default)
+
+    def set_inhibitor(self, win, inhibitor):
+        win.command("inhibit_idle \"{0}\"".format(inhibitor))
+        
+    def set_window_title_format(self, win, title_format):
+        win.command("title_format \"{0}\"".format(title_format))
+
+if __name__=="__main__":
+    parser = ArgumentParser(prog='swaycaffeine',
+                            description='Easy access Sway\'s idle inhibitors.')
+    parser.add_argument('-i', '--inhibitor',
+                        choices=['visible', 'focus', 'fullscreen', 'open'],
+                        required=False,
+                        default='open',
+                        action='store',
+                        help='The idle inhibitor to set')
+    parser.add_argument('-c', '--clear-all',
+                        required=False,
+                        action='store_true',
+                        help='Clear idle inhibitors for all windows')
+    parser.add_argument('-f', '--title-format',
+                        required=False,
+                        default='%title',
+                        action='store',
+                        help='Title format for windows without idle inhibitor')
+    parser.add_argument('-F', '--title-format-inhibitor',
+                        required=False,
+                        default='&#9749; %title',
+                        action='store',
+                        help='Title format for windows with idle inhibitor')
+    args = parser.parse_args()
+    
+    caffeine = SwayCaffeine(inhibitor=args.inhibitor,
+                            title_format=args.title_format,
+                            title_format_inhibitor=args.title_format_inhibitor)
+
+    if args.clear_all:
+        caffeine.clear_all_inhibitors()
+    else:
+        caffeine.toggle_inhibitor()
