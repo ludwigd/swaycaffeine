@@ -29,8 +29,8 @@ class SwayCaffeine:
 
     def toggle_inhibitor(self):
         win = self.wm.get_tree().find_focused()
-        inhibits_idle = win.ipc_data['inhibit_idle']
-        if inhibits_idle:
+        user_inhibitor = win.ipc_data['idle_inhibitors']['user']
+        if user_inhibitor != 'none':
             self.set_inhibitor(win, 'none')
             self.set_window_title_format(win, self.title_format_default)
         else:
