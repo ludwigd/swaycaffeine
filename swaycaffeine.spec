@@ -1,7 +1,7 @@
 %global srcname swaycaffeine
 
 Name:       swaycaffeine
-Version:    0.0.1
+Version:    0.0.2
 Release:    1%{?dist}
 Summary:    Easy access to Sway's idle inhibitors
 License:    GPLv3+
@@ -36,6 +36,9 @@ install -m 755 ./swaycaffeine %{buildroot}%{_bindir}/swaycaffeine
 %{_bindir}/swaycaffeine
 
 %changelog
+* Fri Sep 01 2023 Damian Ludwig 0.0.2-1
+- use idle_inhibitors/user to check for inhibitors
+
 * Mon Aug 28 2023 Damian Ludwig 0.0.1-1
 - new package built with tito
 
