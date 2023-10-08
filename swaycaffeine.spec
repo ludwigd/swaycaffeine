@@ -1,7 +1,7 @@
 %global srcname swaycaffeine
 
 Name:       swaycaffeine
-Version:    0.0.2
+Version:    0.0.3
 Release:    1%{?dist}
 Summary:    Easy access to Sway's idle inhibitors
 License:    GPLv3+
@@ -36,6 +36,9 @@ install -m 755 ./swaycaffeine %{buildroot}%{_bindir}/swaycaffeine
 %{_bindir}/swaycaffeine
 
 %changelog
+* Sun Oct 08 2023 Damian Ludwig <ludwigd@fedoraproject.org> 0.0.3-1
+- added interactive mode (ludwigd@fedoraproject.org)
+
 * Fri Sep 01 2023 Damian Ludwig 0.0.2-1
 - use idle_inhibitors/user to check for inhibitors
 
