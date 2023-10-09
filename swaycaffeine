@@ -17,7 +17,6 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from argparse import ArgumentParser
-from enum import Enum
 from i3ipc import Connection as Sway
 
 class SwayCaffeine:
@@ -52,18 +51,8 @@ class SwayCaffeine:
 
     def interactive(self):
         self.list_windows()
-        id_string = input("Pick a window by entering the id: ")
-        id = int(id_string)
-        win = self.get_window(id)
-        if win == None:
-            print("Unknown window id. Exit!")
-            exit(1)
-        inhibitor_string = input("Choose an inhibitor (0=none, 1=visible, 2=focus, 3=fullscreen, 4=open): ")
-        inhibitor_id = int(inhibitor_string)
-        if inhibitor_id < 0 or inhibitor_id > 4:
-            print("Unknown inhibitor. Exit!")
-            exit(1)
-        inhibitor = (["none", "visible", "focus", "fullscreen", "open"])[inhibitor_id]
+        win = self.get_window(readint("Enter window id: "))
+        inhibitor = self.get_inhibitor(readint("Choose inhibitor (0=none, 1=visible, 2=focus, 3=fullscreen, 4=open): "))
         self.set_inhibitor(win, inhibitor)
         if inhibitor == "none":
             self.set_window_title_format(win, self.title_format_default)
@@ -72,13 +61,33 @@ class SwayCaffeine:
 
     def list_windows(self):
         windows = self.wm.get_tree().leaves()
+        print("{0:>10} {1:>4} {2}".format("INHIBITOR", "ID", "NAME"))
         for win in windows:
             inhibitor = win.ipc_data['idle_inhibitors']['user']
-            print("{0}\t{1}\t{2}".format(inhibitor, win.id, win.name))
+            print("{0:>10} {1:>4} {2}".format(inhibitor, win.id, win.name[0:50]))
+        print()
 
     def get_window(self, id):
-        return self.wm.get_tree().find_by_id(id)
+        win = self.wm.get_tree().find_by_id(id)
+        if win == None:
+            print("Unknown window id. Exit!")
+            exit(1)
+        return win
 
+    def get_inhibitor(self, id):
+        inhibitors = ["none", "visible", "focus", "fullscreen", "open"]
+        if id < 0 or id >= len(inhibitors):
+            print("Unkown inhibitor. Exit!")
+            exit(1)
+        return inhibitors[id]
+
+def readint(msg):
+    try:
+        return int(input(msg))
+    except:
+        print("Not an Integer. Exit!")
+        exit(1)
+    
 if __name__=="__main__":
     parser = ArgumentParser(prog='swaycaffeine',
                             description='Easy access Sway\'s idle inhibitors.')
@@ -92,10 +101,14 @@ if __name__=="__main__":
                         required=False,
                         action='store_true',
                         help='Clear idle inhibitors for all windows')
+    parser.add_argument('-l', '--list',
+                        required=False,
+                        action='store_true',
+                        help='Lists all windows and their idle inhibitors')
     parser.add_argument('-I', '--interactive',
                         required=False,
                         action='store_true',
-                        help='Interactively set inhibitors')
+                        help='Set inhibitors interactively')
     parser.add_argument('-f', '--title-format',
                         required=False,
                         default='%title',
@@ -112,7 +125,9 @@ if __name__=="__main__":
                             title_format=args.title_format,
                             title_format_inhibitor=args.title_format_inhibitor)
 
-    if args.interactive:
+    if args.list:
+        caffeine.list_windows()
+    elif args.interactive:
         caffeine.interactive()
     elif args.clear_all:
         caffeine.clear_all_inhibitors()
