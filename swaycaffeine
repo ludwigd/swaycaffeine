@@ -16,25 +16,24 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import sys
 from argparse import ArgumentParser
 from i3ipc import Connection as Sway
 
 class SwayCaffeine:
     
-    def __init__(self, inhibitor, title_format, title_format_inhibitor):
-        self.default_inhibitor = inhibitor
-        self.title_format_default = title_format
-        self.title_format_inhibitor = title_format_inhibitor
+    def __init__(self, title_format_default, title_format_inhibitor):
         self.wm = Sway()
+        self.title_format_default = title_format_default
+        self.title_format_inhibitor = title_format_inhibitor
 
-    def toggle_inhibitor(self):
-        win = self.wm.get_tree().find_focused()
+    def set_or_toggle_inhibitor(self, win, inhibitor, toggle=False):
         user_inhibitor = win.ipc_data['idle_inhibitors']['user']
-        if user_inhibitor != 'none':
+        if user_inhibitor != 'none' and toggle:
             self.set_inhibitor(win, 'none')
             self.set_window_title_format(win, self.title_format_default)
         else:
-            self.set_inhibitor(win, self.default_inhibitor)
+            self.set_inhibitor(win, inhibitor)
             self.set_window_title_format(win, self.title_format_inhibitor)
 
     def clear_all_inhibitors(self):
@@ -49,16 +48,6 @@ class SwayCaffeine:
     def set_window_title_format(self, win, title_format):
         win.command("title_format \"{0}\"".format(title_format))
 
-    def interactive(self):
-        self.list_windows()
-        win = self.get_window(readint("Enter window id: "))
-        inhibitor = self.get_inhibitor(readint("Choose inhibitor (0=none, 1=visible, 2=focus, 3=fullscreen, 4=open): "))
-        self.set_inhibitor(win, inhibitor)
-        if inhibitor == "none":
-            self.set_window_title_format(win, self.title_format_default)
-        else:
-            self.set_window_title_format(win, self.title_format_inhibitor)
-
     def list_windows(self):
         windows = self.wm.get_tree().leaves()
         print("{0:>10} {1:>4} {2}".format("INHIBITOR", "ID", "NAME"))
@@ -68,68 +57,61 @@ class SwayCaffeine:
         print()
 
     def get_window(self, id):
-        win = self.wm.get_tree().find_by_id(id)
+        if id > 0:
+            win = self.wm.get_tree().find_by_id(id)
+        else:
+            win = self.wm.get_tree().find_focused()
         if win == None:
             print("Unknown window id. Exit!")
             exit(1)
         return win
 
-    def get_inhibitor(self, id):
-        inhibitors = ["none", "visible", "focus", "fullscreen", "open"]
-        if id < 0 or id >= len(inhibitors):
-            print("Unkown inhibitor. Exit!")
-            exit(1)
-        return inhibitors[id]
-
-def readint(msg):
-    try:
-        return int(input(msg))
-    except:
-        print("Not an Integer. Exit!")
-        exit(1)
-    
 if __name__=="__main__":
     parser = ArgumentParser(prog='swaycaffeine',
-                            description='Easy access Sway\'s idle inhibitors.')
+                            description='Easy access Sway\'s idle inhibitors.',
+                            epilog='Author: ludwigd@fedoraproject.org')
     parser.add_argument('-i', '--inhibitor',
-                        choices=['visible', 'focus', 'fullscreen', 'open'],
+                        choices=['visible', 'focus', 'fullscreen', 'open', 'none'],
                         required=False,
                         default='open',
                         action='store',
-                        help='The idle inhibitor to set')
+                        help='The idle inhibitor to set.')
+    parser.add_argument('-t', '--toggle',
+                        required=False,
+                        action='store_true',
+                        help='Toggles the inhibitor instead of setting it.')
+    parser.add_argument('-w', '--window',
+                        required=False,
+                        action='store',
+                        default=-1,
+                        type=int,
+                        help='ID of the target window.')
     parser.add_argument('-c', '--clear-all',
                         required=False,
                         action='store_true',
-                        help='Clear idle inhibitors for all windows')
+                        help='Clear idle inhibitors for all windows.')
     parser.add_argument('-l', '--list',
                         required=False,
                         action='store_true',
-                        help='Lists all windows and their idle inhibitors')
-    parser.add_argument('-I', '--interactive',
-                        required=False,
-                        action='store_true',
-                        help='Set inhibitors interactively')
-    parser.add_argument('-f', '--title-format',
+                        help='Lists all windows and their idle inhibitors.')
+    parser.add_argument('-f', '--title-format-default',
                         required=False,
                         default='%title',
                         action='store',
-                        help='Title format for windows without idle inhibitor')
+                        help='Title format for windows without idle inhibitor.')
     parser.add_argument('-F', '--title-format-inhibitor',
                         required=False,
                         default='&#9749; %title',
                         action='store',
-                        help='Title format for windows with idle inhibitor')
+                        help='Title format for windows with idle inhibitor.')
     args = parser.parse_args()
     
-    caffeine = SwayCaffeine(inhibitor=args.inhibitor,
-                            title_format=args.title_format,
-                            title_format_inhibitor=args.title_format_inhibitor)
+    caffeine = SwayCaffeine(args.title_format_default, args.title_format_inhibitor)
 
-    if args.list:
+    if args.list or len(sys.argv)==1:
         caffeine.list_windows()
-    elif args.interactive:
-        caffeine.interactive()
     elif args.clear_all:
-        caffeine.clear_all_inhibitors()
+        caffeine.clear_all_inhibitors(args.title_format_default)
     else:
-        caffeine.toggle_inhibitor()
+        win = caffeine.get_window(args.window)
+        caffeine.set_or_toggle_inhibitor(win, args.inhibitor, args.toggle)
