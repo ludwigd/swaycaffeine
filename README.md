@@ -28,7 +28,7 @@ Add this to your Sway config:
 
 ```
 # Toggle the 'visible' inhibitor on the focused window
-bindsym $mod+i exec swaycaffeine -i visible
+bindsym $mod+i exec swaycaffeine -t -i visible
 
 # Remove inhibitors from ALL windows at once
 bindsym $mod+Shift+i exec swaycaffeine --clear-all
