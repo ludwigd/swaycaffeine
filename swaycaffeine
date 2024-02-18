@@ -111,7 +111,7 @@ if __name__=="__main__":
     if args.list or len(sys.argv)==1:
         caffeine.list_windows()
     elif args.clear_all:
-        caffeine.clear_all_inhibitors(args.title_format_default)
+        caffeine.clear_all_inhibitors()
     else:
         win = caffeine.get_window(args.window)
         caffeine.set_or_toggle_inhibitor(win, args.inhibitor, args.toggle)
